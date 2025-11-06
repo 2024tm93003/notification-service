@@ -1,0 +1,21 @@
+spring:
+  application:
+    name: notification-service
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+notification:
+  mail:
+    from: noreply@bank.example
+    mock-delivery: true
+  thresholds:
+    high-value-transaction: 10000
+
+logging:
+  level:
+    com.bank.notificationservice: INFO
+
