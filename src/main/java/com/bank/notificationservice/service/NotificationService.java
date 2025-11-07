@@ -47,7 +47,6 @@ public class NotificationService {
         if (request.getThresholdOverride() != null && request.getThresholdOverride().signum() > 0) {
             return request.getThresholdOverride();
         }
-        return properties.getThresholds().getHighValueTransaction();
+        return properties.thresholds().highValueTransaction();
     }
 }
-

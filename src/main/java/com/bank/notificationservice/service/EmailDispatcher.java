@@ -27,7 +27,7 @@ public class EmailDispatcher {
     }
 
     public void dispatch(EmailMessage message) {
-        if (properties.getMail().isMockDelivery()) {
+        if (properties.mail().mockDelivery()) {
             log.info("Mock email delivery: to={} subject='{}' body={}", message.to(), message.subject(), message.body());
             return;
         }
@@ -37,7 +37,7 @@ public class EmailDispatcher {
             MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, StandardCharsets.UTF_8.name());
             helper.setSubject(message.subject());
             helper.setTo(message.to());
-            helper.setFrom(properties.getMail().getFrom());
+            helper.setFrom(properties.mail().from());
             helper.setText(message.body(), false);
             mailSender.send(mimeMessage);
             log.info("Dispatched email notification to {}", message.to());

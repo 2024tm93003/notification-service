@@ -22,11 +22,9 @@ src/main/java/com/bank/notificationservice
 └── config          # Typed configuration properties
 src/main/resources
 ├── application.yml         # Shared defaults
-├── application-local.yml   # Local profile (mock delivery on)
-└── application-smtp.yml    # SMTP profile (real delivery)
+└── application-local.yml   # Local profile (mock delivery on)
 env/
-├── local.env               # Sample local environment variables
-└── smtp.env                # Sample SMTP-ready environment variables
+└── local.env               # Sample environment variables
 ```
 
 ## Configuration
@@ -41,15 +39,13 @@ Key properties live under the `notification` prefix:
 
 ### Profiles
 - `local`: Default development profile. Logs email contents instead of sending. Configured via `application-local.yml`.
-- `smtp`: Production-like profile. Reads SMTP credentials from the environment and sends real emails. Configured via `application-smtp.yml`.
 
-Activate a profile through the `SPRING_PROFILES_ACTIVE` environment variable (e.g., `local`, `smtp`).
+Activate a profile through the `SPRING_PROFILES_ACTIVE` environment variable (e.g., `local`).
 
 ### Environment Files
-Use the supplied `.env` templates with Docker or your process manager:
+Use the supplied `.env` template with Docker or your process manager:
 
 - `env/local.env`: Uses the `local` profile with mock delivery enabled.
-- `env/smtp.env`: Targets the `smtp` profile; specify your SMTP credentials before use.
 
 > **Tip:** Adjust `notification.mail.mock-delivery` in the env file if you want to toggle between mock and real delivery without changing property files.
 
@@ -75,9 +71,6 @@ The runnable JAR is placed at `target/notification-service-0.1.0-SNAPSHOT.jar`.
 ```bash
 # Local/dev mode (mock delivery)
 docker run --rm -p 8080:8080 --env-file env/local.env notification-service:local
-
-# SMTP mode (edit env/smtp.env with real credentials first)
-docker run --rm -p 8080:8080 --env-file env/smtp.env notification-service:local
 ```
 
 ### JVM
@@ -210,11 +203,6 @@ curl -X POST http://localhost:8080/api/notifications/accounts/events \
 - `202 Accepted` when the notification is queued for delivery.
 - `200 OK` for high-value requests that fell below the configured threshold (email skipped).
 - `400 Bad Request` when validation fails (field-level errors included).
-
-### Gmail SMTP Quick Start
-- Generate a 16-character App Password from your Google Account (required because Google blocks basic auth).
-- Update `env/smtp.env` with your Gmail address and the app password; the host (`smtp.gmail.com`) and port (`587`) are already set.
-- Run the container with `--env-file env/smtp.env` to send emails through Gmail.
 
 ## Testing
 
