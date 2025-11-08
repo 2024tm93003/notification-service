@@ -5,13 +5,24 @@ import com.bank.notificationservice.dto.AccountStatusChangeNotificationRequest;
 import com.bank.notificationservice.dto.HighValueTransactionNotificationRequest;
 import com.bank.notificationservice.model.AccountEventType;
 import com.bank.notificationservice.support.EmailMessage;
+import com.bank.notificationservice.support.SmsMessage;
 import java.math.BigDecimal;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 import org.springframework.stereotype.Component;
 
 @Component
 public class NotificationComposer {
+
+    private static final int SMS_MAX_LENGTH = 140;
+    private static final ZoneId DEFAULT_ZONE = ZoneId.of("Asia/Kolkata");
+    private static final DateTimeFormatter TRANSACTION_TIME_FORMATTER =
+            DateTimeFormatter.ofPattern("dd MMM yyyy, hh:mm a").withZone(DEFAULT_ZONE);
 
     public EmailMessage composeHighValueTransaction(HighValueTransactionNotificationRequest request, BigDecimal threshold) {
         String subject = "High value " + request.getTxnType() + " alert for account " + request.getAccountNumber();
@@ -80,6 +91,14 @@ public class NotificationComposer {
         return new EmailMessage(request.getCustomerEmail(), subject, body.toString());
     }
 
+    public SmsMessage composeHighValueTransactionSms(HighValueTransactionNotificationRequest request) {
+        String amount = formatAmountForSms(request.getAmount());
+        String transactionTime = formatTransactionTime(request.getTransactionTime());
+        String body = "Dear %s, your account was debited with ₹%s on %s."
+                .formatted(request.getCustomerName(), amount, transactionTime);
+        return new SmsMessage(request.getCustomerPhone(), trimSms(body));
+    }
+
     private String formatCurrency(BigDecimal value, String currencyCode) {
         try {
             NumberFormat customFormatter = NumberFormat.getCurrencyInstance(Locale.US);
@@ -117,5 +136,25 @@ public class NotificationComposer {
             case BILL_CLEARED ->
                     "Your recent bill has been cleared for account " + request.getAccountNumber() + ".";
         };
+    }
+
+    private String formatAmountForSms(BigDecimal amount) {
+        if (amount == null) {
+            return "0.00";
+        }
+        DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.ENGLISH);
+        DecimalFormat formatter = new DecimalFormat("##,##,##0.00", symbols);
+        return formatter.format(amount);
+    }
+
+    private String formatTransactionTime(Instant timestamp) {
+        return TRANSACTION_TIME_FORMATTER.format(timestamp != null ? timestamp : Instant.now());
+    }
+
+    private String trimSms(String value) {
+        if (value.length() <= SMS_MAX_LENGTH) {
+            return value;
+        }
+        return value.substring(0, SMS_MAX_LENGTH - 3) + "...";
     }
 }

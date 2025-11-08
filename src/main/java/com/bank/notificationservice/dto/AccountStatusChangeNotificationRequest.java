@@ -71,4 +71,3 @@ public class AccountStatusChangeNotificationRequest {
         this.remarks = remarks;
     }
 }
-

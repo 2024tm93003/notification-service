@@ -5,7 +5,8 @@ Spring Boot microservice that sends customer email notifications for banking eve
 ## Features
 - RESTful endpoints to trigger notifications from upstream transaction/account services.
 - Configurable high-value transaction thresholds with per-request overrides.
-- Email delivery via SMTP or mock console logging (useful for local development).
+- Dual delivery channel: rich emails plus concise SMS alerts via 2Factor.in (real or mockable).
+- In-memory notification audit log with a history endpoint.
 - Spring Profiles & `.env` files to keep environment-specific settings isolated.
 - Docker container for consistent deployment.
 - Actuator health endpoint for basic observability.
@@ -36,6 +37,10 @@ Key properties live under the `notification` prefix:
 | `notification.mail.from` | Default `from` address for outbound emails |
 | `notification.mail.mock-delivery` | When `true`, emails are logged instead of sent |
 | `notification.thresholds.high-value-transaction` | Default minimum amount that qualifies as "high value" |
+| `notification.sms.api-key` | API key for calling the 2Factor.in SMS API |
+| `notification.sms.base-url` | Base URL for the 2Factor.in REST API |
+| `notification.sms.mock-delivery` | When `true`, SMS payloads are logged instead of sent |
+| `notification.docs.server-url` | Server URL advertised inside the generated Swagger UI (defaults to `http://localhost:8080`) |
 
 ### Profiles
 - `local`: Default development profile. Logs email contents instead of sending. Configured via `application-local.yml`.
@@ -45,9 +50,16 @@ Activate a profile through the `SPRING_PROFILES_ACTIVE` environment variable (e.
 ### Environment Files
 Use the supplied `.env` template with Docker or your process manager:
 
-- `env/local.env`: Uses the `local` profile with mock delivery enabled.
+- `env/local.env`: Uses the `local` profile with mock email & SMS delivery enabled.
+- Important SMTP variables (consumed by Spring Boot): `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM`, `MAIL_SMTP_AUTH`, and `MAIL_SMTP_STARTTLS_ENABLE`.
 
-> **Tip:** Adjust `notification.mail.mock-delivery` in the env file if you want to toggle between mock and real delivery without changing property files.
+> **Tip:** Adjust `notification.mail.mock-delivery` and `notification.sms.mock-delivery` in the env file if you want to toggle between mock and real delivery without changing property files.
+
+### SMS Delivery (2Factor.in)
+- Provide a valid `notification.sms.api-key` from your 2Factor.in account.
+- Override `notification.sms.base-url` if 2Factor.in issues a different endpoint.
+- SMS payloads are submitted via `GET https://2factor.in/API/V1/{apiKey}/SMS/{phone}/{message}`.
+- Keep messages short (the service trims content to 140 chars automatically).
 
 ## Building
 
@@ -87,6 +99,11 @@ Base path: `/api/notifications`
 | `POST /transactions/high-value` | Trigger high value transaction email |
 | `POST /accounts/status-change` | Notify customers about status transitions |
 | `POST /accounts/events` | Notify customers about account events (contact/documents/loan/bill changes) |
+| `GET /history` | Return all email/SMS notifications sent in the last 7 days |
+
+### API Documentation & Swagger UI
+
+Run the service and navigate to `http://localhost:8080/swagger-ui/index.html` for an interactive view of every endpoint. The raw OpenAPI document is served at `http://localhost:8080/v3/api-docs`. If you deploy the service elsewhere, override `notification.docs.server-url` so the "Try it out" buttons point to the correct host.
 
 Supported `eventType` values:
 - `ACCOUNT_NUMBER_UPDATED`
@@ -106,6 +123,7 @@ curl -X POST http://localhost:8080/api/notifications/transactions/high-value \
     "accountNumber": "123-456-789",
     "customerName": "Jane Doe",
     "customerEmail": "noreply2024tm93003@gmail.com",
+    "customerPhone": "+91-9000000000",
     "txnType": "DEBIT",
     "amount": 15000,
     "currency": "INR",
@@ -122,6 +140,7 @@ curl -X POST http://localhost:8080/api/notifications/accounts/status-change \
     "accountNumber": "987-654-321",
     "customerName": "John Smith",
     "customerEmail": "noreply2024tm93003@gmail.com",
+    "customerPhone": "+91-9000000000",
     "previousStatus": "Pending KYC",
     "currentStatus": "Active",
     "remarks": "Documents verified"
@@ -139,6 +158,7 @@ curl -X POST http://localhost:8080/api/notifications/accounts/events \
     "accountNumber": "555-666-777",
     "customerName": "Mary Major",
     "customerEmail": "noreply2024tm93003@gmail.com",
+    "customerPhone": "+91-9000000000",
     "eventType": "ACCOUNT_NUMBER_UPDATED",
     "description": "Your new account number is 555-666-999"
   }'
@@ -150,6 +170,7 @@ curl -X POST http://localhost:8080/api/notifications/accounts/events \
     "accountNumber": "555-666-777",
     "customerName": "Mary Major",
     "customerEmail": "noreply2024tm93003@gmail.com",
+    "customerPhone": "+91-9000000000",
     "eventType": "CONTACT_INFORMATION_UPDATED",
     "description": "Mobile number updated to +91-9000000000"
   }'
@@ -161,6 +182,7 @@ curl -X POST http://localhost:8080/api/notifications/accounts/events \
     "accountNumber": "555-666-777",
     "customerName": "Mary Major",
     "customerEmail": "noreply2024tm93003@gmail.com",
+    "customerPhone": "+91-9000000000",
     "eventType": "DOCUMENT_UPDATED",
     "description": "Latest bank statement uploaded"
   }'
@@ -172,6 +194,7 @@ curl -X POST http://localhost:8080/api/notifications/accounts/events \
     "accountNumber": "555-666-777",
     "customerName": "Mary Major",
     "customerEmail": "noreply2024tm93003@gmail.com",
+    "customerPhone": "+91-9000000000",
     "eventType": "LOAN_TAKEN",
     "description": "Personal loan of INR 500,000 disbursed"
   }'
@@ -183,6 +206,7 @@ curl -X POST http://localhost:8080/api/notifications/accounts/events \
     "accountNumber": "555-666-777",
     "customerName": "Mary Major",
     "customerEmail": "noreply2024tm93003@gmail.com",
+    "customerPhone": "+91-9000000000",
     "eventType": "LOAN_CLEARED",
     "description": "Final EMI received on 2024-02-20"
   }'
@@ -194,10 +218,25 @@ curl -X POST http://localhost:8080/api/notifications/accounts/events \
     "accountNumber": "555-666-777",
     "customerName": "Mary Major",
     "customerEmail": "noreply2024tm93003@gmail.com",
+    "customerPhone": "+91-9000000000",
     "eventType": "BILL_CLEARED",
     "description": "Electricity bill payment of INR 2,300 confirmed"
   }'
 ```
+
+### Notification History
+```bash
+curl -X GET http://localhost:8080/api/notifications/history
+```
+
+The response is an array of entries from the past 7 days. Each object contains:
+- `id`: unique identifier
+- `channel`: `EMAIL` or `SMS`
+- `recipient`: email address or phone number
+- `subject`: populated for emails
+- `preview`: truncated body preview
+- `notificationType`: `HIGH_VALUE_TRANSACTION`, `ACCOUNT_STATUS_CHANGE`, or `ACCOUNT_EVENT`
+- `timestamp`: ISO-8601 instant when the notification was queued
 
 ### Responses
 - `202 Accepted` when the notification is queued for delivery.
