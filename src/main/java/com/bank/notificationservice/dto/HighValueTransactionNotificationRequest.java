@@ -39,7 +39,7 @@ public class HighValueTransactionNotificationRequest {
     @Positive
     private BigDecimal thresholdOverride;
 
-    @NotNull
+    
     private Instant transactionTime;
 
     public String getAccountNumber() {
@@ -123,7 +123,7 @@ public class HighValueTransactionNotificationRequest {
     }
 
     public Instant getTransactionTime() {
-        return transactionTime;
+        return transactionTime == null? Instant.now() : transactionTime;
     }
 
     public void setTransactionTime(Instant transactionTime) {

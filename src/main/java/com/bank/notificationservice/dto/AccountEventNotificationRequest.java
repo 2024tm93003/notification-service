@@ -17,6 +17,8 @@ public class AccountEventNotificationRequest {
     @NotBlank
     private String customerEmail;
 
+    private String customerPhone;
+
     @NotNull
     private AccountEventType eventType;
 
@@ -44,6 +46,14 @@ public class AccountEventNotificationRequest {
 
     public void setCustomerEmail(String customerEmail) {
         this.customerEmail = customerEmail;
+    }
+
+    public String getCustomerPhone() {
+        return customerPhone;
+    }
+
+    public void setCustomerPhone(String customerPhone) {
+        this.customerPhone = customerPhone;
     }
 
     public AccountEventType getEventType() {

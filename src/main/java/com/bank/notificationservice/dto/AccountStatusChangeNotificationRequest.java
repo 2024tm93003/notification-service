@@ -15,6 +15,8 @@ public class AccountStatusChangeNotificationRequest {
     @NotBlank
     private String customerEmail;
 
+    private String customerPhone;
+
     @NotBlank
     private String previousStatus;
 
@@ -45,6 +47,14 @@ public class AccountStatusChangeNotificationRequest {
 
     public void setCustomerEmail(String customerEmail) {
         this.customerEmail = customerEmail;
+    }
+
+    public String getCustomerPhone() {
+        return customerPhone;
+    }
+
+    public void setCustomerPhone(String customerPhone) {
+        this.customerPhone = customerPhone;
     }
 
     public String getPreviousStatus() {

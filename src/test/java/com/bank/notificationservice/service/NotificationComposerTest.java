@@ -51,6 +51,7 @@ class NotificationComposerTest {
         request.setAccountNumber("9876543210");
         request.setCustomerName("John Smith");
         request.setCustomerEmail("john@example.com");
+        request.setCustomerPhone("+15550002222");
         request.setPreviousStatus("Pending KYC");
         request.setCurrentStatus("Active");
         request.setRemarks("KYC documents verified");
@@ -64,11 +65,33 @@ class NotificationComposerTest {
     }
 
     @Test
+    void composeAccountStatusChangeSms_shouldContainStatusAndRemarks() {
+        AccountStatusChangeNotificationRequest request = new AccountStatusChangeNotificationRequest();
+        request.setAccountNumber("9876543210");
+        request.setCustomerName("John Smith");
+        request.setCustomerEmail("john@example.com");
+        request.setCustomerPhone("+15550002222");
+        request.setPreviousStatus("Pending KYC");
+        request.setCurrentStatus("Active");
+        request.setRemarks("KYC documents verified");
+
+        SmsMessage sms = composer.composeAccountStatusChangeSms(request);
+
+        assertThat(sms.to()).isEqualTo("+15550002222");
+        assertThat(sms.body().length()).isLessThanOrEqualTo(140);
+        assertThat(sms.body()).contains("Dear John Smith");
+        assertThat(sms.body()).contains("Pending KYC");
+        assertThat(sms.body()).contains("Active");
+        assertThat(sms.body()).contains("KYC documents verified");
+    }
+
+    @Test
     void composeAccountEvent_shouldFormatEventSpecificMessage() {
         AccountEventNotificationRequest request = new AccountEventNotificationRequest();
         request.setAccountNumber("222333444");
         request.setCustomerName("Mary Major");
         request.setCustomerEmail("mary@example.com");
+        request.setCustomerPhone("+15550003333");
         request.setEventType(AccountEventType.LOAN_CLEARED);
         request.setDescription("Final EMI received on 2024-02-20");
 
@@ -77,6 +100,24 @@ class NotificationComposerTest {
         assertThat(message.subject()).contains("loan is closed");
         assertThat(message.body()).contains("Final EMI received");
         assertThat(message.body()).contains("Mary Major");
+    }
+
+    @Test
+    void composeAccountEventSms_shouldIncludeEventMessageAndDescription() {
+        AccountEventNotificationRequest request = new AccountEventNotificationRequest();
+        request.setAccountNumber("222333444");
+        request.setCustomerName("Mary Major");
+        request.setCustomerEmail("mary@example.com");
+        request.setCustomerPhone("+15550003333");
+        request.setEventType(AccountEventType.LOAN_CLEARED);
+        request.setDescription("Final EMI received on 2024-02-20");
+
+        SmsMessage sms = composer.composeAccountEventSms(request);
+
+        assertThat(sms.to()).isEqualTo("+15550003333");
+        assertThat(sms.body().length()).isLessThanOrEqualTo(140);
+        assertThat(sms.body()).contains("Mary Major");
+        assertThat(sms.body()).contains("Final EMI received");
     }
 
     @Test

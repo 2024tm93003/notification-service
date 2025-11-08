@@ -99,6 +99,44 @@ public class NotificationComposer {
         return new SmsMessage(request.getCustomerPhone(), trimSms(body));
     }
 
+    public SmsMessage composeAccountStatusChangeSms(AccountStatusChangeNotificationRequest request) {
+        StringBuilder body = new StringBuilder()
+                .append("Dear ")
+                .append(request.getCustomerName())
+                .append(", your account ")
+                .append(request.getAccountNumber())
+                .append(" status changed from ")
+                .append(request.getPreviousStatus())
+                .append(" to ")
+                .append(request.getCurrentStatus())
+                .append(".");
+
+        if (request.getRemarks() != null && !request.getRemarks().isBlank()) {
+            body.append(" Details: ").append(request.getRemarks());
+        }
+
+        body.append(" Regards, Banking Alerts Team");
+
+        return new SmsMessage(request.getCustomerPhone(), trimSms(body.toString()));
+    }
+
+    public SmsMessage composeAccountEventSms(AccountEventNotificationRequest request) {
+        StringBuilder body = new StringBuilder()
+                .append("Dear ")
+                .append(request.getCustomerName())
+                .append(", ")
+                .append(eventMessage(request))
+                .append(".");
+
+        if (request.getDescription() != null && !request.getDescription().isBlank()) {
+            body.append(" Details: ").append(request.getDescription());
+        }
+
+        body.append(" Regards, Banking Alerts Team");
+
+        return new SmsMessage(request.getCustomerPhone(), trimSms(body.toString()));
+    }
+
     private String formatCurrency(BigDecimal value, String currencyCode) {
         try {
             NumberFormat customFormatter = NumberFormat.getCurrencyInstance(Locale.US);

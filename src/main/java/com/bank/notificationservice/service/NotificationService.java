@@ -59,16 +59,26 @@ public class NotificationService {
         return true;
     }
 
-    public void handleAccountStatusChange(AccountStatusChangeNotificationRequest request) {
+    public boolean handleAccountStatusChange(AccountStatusChangeNotificationRequest request) {
         EmailMessage emailMessage = composer.composeAccountStatusChange(request);
         emailDispatcher.dispatch(emailMessage);
         auditRepository.save(NotificationRecord.email(emailMessage.to(), emailMessage.subject(), emailMessage.body(), ACCOUNT_STATUS_TYPE));
+
+        SmsMessage smsMessage = composer.composeAccountStatusChangeSms(request);
+        smsDispatcher.dispatch(smsMessage);
+        auditRepository.save(NotificationRecord.sms(smsMessage.to(), smsMessage.body(), HIGH_VALUE_TYPE));
+        return true;
     }
 
-    public void handleAccountEvent(AccountEventNotificationRequest request) {
+    public boolean handleAccountEvent(AccountEventNotificationRequest request) {
         EmailMessage emailMessage = composer.composeAccountEvent(request);
         emailDispatcher.dispatch(emailMessage);
         auditRepository.save(NotificationRecord.email(emailMessage.to(), emailMessage.subject(), emailMessage.body(), ACCOUNT_EVENT_TYPE));
+
+        SmsMessage smsMessage = composer.composeAccountEventSms(request);
+        smsDispatcher.dispatch(smsMessage);
+        auditRepository.save(NotificationRecord.sms(smsMessage.to(), smsMessage.body(), ACCOUNT_EVENT_TYPE));
+        return true;
     }
 
     public List<NotificationRecord> fetchNotificationsForPastWeek() {

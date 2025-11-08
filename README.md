@@ -61,6 +61,47 @@ Use the supplied `.env` template with Docker or your process manager:
 - SMS payloads are submitted via `GET https://2factor.in/API/V1/{apiKey}/SMS/{phone}/{message}`.
 - Keep messages short (the service trims content to 140 chars automatically).
 
+### SMS Delivery
+
+This service supports two SMS delivery modes:
+
+- 2Factor.in (legacy/default): when `notification.sms.api-key` and `notification.sms.base-url` are configured the service will send via the 2Factor.in API (existing behaviour).
+- Twilio (preferred when configured): when you provide Twilio credentials the service will use the Twilio Java SDK to send SMS messages.
+
+How Twilio is configured
+
+You can provide Twilio credentials via environment variables or `env/local.env`. The application maps the following environment variable names to the configuration properties used by Spring Boot:
+
+| Env var | Bound Spring property |
+|---|---|
+| `TWILIO_ACCOUNT_SID` | `notification.sms.accountSid` |
+| `TWILIO_AUTH_TOKEN` | `notification.sms.authToken` |
+| `TWILIO_FROM_NUMBER` | `notification.sms.fromNumber` |
+
+The loader also accepts `NOTIFICATION_SMS_*` names for backward compatibility (for example `NOTIFICATION_SMS_ACCOUNT_SID`). Both uppercase and lowercase env keys are accepted in `env/local.env`.
+
+Example `env/local.env` entries (placeholders - do NOT commit real secrets):
+
+```dotenv
+TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+TWILIO_AUTH_TOKEN=your_twilio_auth_token
+TWILIO_FROM_NUMBER=+1234567890
+
+# legacy 2factor values (optional)
+NOTIFICATION_SMS_API_KEY=dc474765-...
+NOTIFICATION_SMS_BASE_URL=https://2factor.in/API/V1
+NOTIFICATION_SMS_SENDER_ID=TFCTOR
+```
+
+Behaviour at runtime
+
+- If `notification.sms.mock-delivery` is `true` the service will log SMS content instead of sending it.
+- If `mock-delivery` is `false` and Twilio credentials (`accountSid`, `authToken`, `fromNumber`) are present the service uses Twilio.
+- If `mock-delivery` is `false` and Twilio credentials are missing the service will attempt to use 2Factor.in when `notification.sms.api-key` is present, otherwise it throws a `NotificationDeliveryException` indicating missing configuration.
+
+Message length
+- SMS messages are trimmed to 140 characters by the composer. Ensure the `customerPhone` field is present in request payloads when expecting SMS delivery.
+
 ## Building
 
 ### With Docker (recommended)

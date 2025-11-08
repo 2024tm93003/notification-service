@@ -30,6 +30,9 @@ notification:
     base-url: https://2factor.in/API/V1
     sender-id: TFCTOR
     mock-delivery: true
+    account-sid: ${TWILIO_ACCOUNT_SID}
+    auth-token: ${TWILIO_AUTH_TOKEN}
+    from-number: ${TWILIO_FROM_NUMBER}
 
 logging:
   level:

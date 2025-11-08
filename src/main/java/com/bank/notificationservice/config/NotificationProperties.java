@@ -22,7 +22,8 @@ public record NotificationProperties(Mail mail, Thresholds thresholds, Sms sms) 
 
     private static final Mail DEFAULT_MAIL = new Mail(DEFAULT_FROM_ADDRESS, DEFAULT_MAIL_MOCK_DELIVERY);
     private static final Thresholds DEFAULT_THRESHOLDS = new Thresholds(DEFAULT_THRESHOLD_AMOUNT);
-    private static final Sms DEFAULT_SMS = new Sms(DEFAULT_SMS_API_KEY, DEFAULT_SMS_BASE_URL, DEFAULT_SMS_SENDER_ID, DEFAULT_SMS_MOCK_DELIVERY);
+    /* Twilio fields are optional and default to null. Keep existing SMS defaults for backwards compatibility. */
+    private static final Sms DEFAULT_SMS = new Sms(DEFAULT_SMS_API_KEY, DEFAULT_SMS_BASE_URL, DEFAULT_SMS_SENDER_ID, DEFAULT_SMS_MOCK_DELIVERY, null, null, null);
 
     public NotificationProperties {
         mail = mail != null ? mail : DEFAULT_MAIL;
@@ -50,12 +51,17 @@ public record NotificationProperties(Mail mail, Thresholds thresholds, Sms sms) 
             @NotBlank String apiKey,
             @NotBlank String baseUrl,
             @NotBlank String senderId,
-            @DefaultValue("true") boolean mockDelivery) {
+            @DefaultValue("true") boolean mockDelivery,
+            /* Twilio credentials - optional; when present the service will use Twilio to send SMS */
+            String accountSid,
+            String authToken,
+            String fromNumber) {
 
         public Sms {
             apiKey = apiKey != null ? apiKey : DEFAULT_SMS_API_KEY;
             baseUrl = baseUrl != null ? baseUrl : DEFAULT_SMS_BASE_URL;
             senderId = senderId != null ? senderId : DEFAULT_SMS_SENDER_ID;
+            /* accountSid, authToken and fromNumber intentionally left nullable - no defaults */
         }
     }
 }
