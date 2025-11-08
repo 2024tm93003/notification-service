@@ -7,7 +7,9 @@ import com.bank.notificationservice.dto.AccountStatusChangeNotificationRequest;
 import com.bank.notificationservice.dto.HighValueTransactionNotificationRequest;
 import com.bank.notificationservice.model.AccountEventType;
 import com.bank.notificationservice.support.EmailMessage;
+import com.bank.notificationservice.support.SmsMessage;
 import java.math.BigDecimal;
+import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -26,11 +28,13 @@ class NotificationComposerTest {
         request.setAccountNumber("1234567890");
         request.setCustomerName("Jane Doe");
         request.setCustomerEmail("jane@example.com");
+        request.setCustomerPhone("+15550001111");
         request.setTxnType("DEBIT");
         request.setAmount(BigDecimal.valueOf(15000));
         request.setCurrency("USD");
         request.setCounterparty("ACME Corp");
         request.setReference("Invoice 42");
+        request.setTransactionTime(Instant.parse("2024-05-01T10:15:30Z"));
 
         EmailMessage message = composer.composeHighValueTransaction(request, BigDecimal.valueOf(10000));
 
@@ -74,5 +78,24 @@ class NotificationComposerTest {
         assertThat(message.body()).contains("Final EMI received");
         assertThat(message.body()).contains("Mary Major");
     }
-}
 
+    @Test
+    void composeHighValueTransactionSms_shouldStayShort() {
+        HighValueTransactionNotificationRequest request = new HighValueTransactionNotificationRequest();
+        request.setAccountNumber("1234567890");
+        request.setCustomerName("Jane Doe");
+        request.setCustomerEmail("jane@example.com");
+        request.setCustomerPhone("+15550001111");
+        request.setTxnType("DEBIT");
+        request.setAmount(BigDecimal.valueOf(15000));
+        request.setCurrency("USD");
+        request.setTransactionTime(Instant.parse("2024-05-01T10:15:30Z"));
+
+        SmsMessage sms = composer.composeHighValueTransactionSms(request);
+
+        assertThat(sms.to()).isEqualTo("+15550001111");
+        assertThat(sms.body().length()).isLessThanOrEqualTo(140);
+        assertThat(sms.body()).contains("Dear Jane Doe");
+        assertThat(sms.body()).contains("₹15,000.00");
+    }
+}

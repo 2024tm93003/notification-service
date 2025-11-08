@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import java.math.BigDecimal;
+import java.time.Instant;
 
 public class HighValueTransactionNotificationRequest {
 
@@ -17,6 +18,9 @@ public class HighValueTransactionNotificationRequest {
     @Email
     @NotBlank
     private String customerEmail;
+
+    @NotBlank
+    private String customerPhone;
 
     @NotBlank
     private String txnType;
@@ -34,6 +38,9 @@ public class HighValueTransactionNotificationRequest {
 
     @Positive
     private BigDecimal thresholdOverride;
+
+    @NotNull
+    private Instant transactionTime;
 
     public String getAccountNumber() {
         return accountNumber;
@@ -57,6 +64,14 @@ public class HighValueTransactionNotificationRequest {
 
     public void setCustomerEmail(String customerEmail) {
         this.customerEmail = customerEmail;
+    }
+
+    public String getCustomerPhone() {
+        return customerPhone;
+    }
+
+    public void setCustomerPhone(String customerPhone) {
+        this.customerPhone = customerPhone;
     }
 
     public String getTxnType() {
@@ -106,5 +121,12 @@ public class HighValueTransactionNotificationRequest {
     public void setThresholdOverride(BigDecimal thresholdOverride) {
         this.thresholdOverride = thresholdOverride;
     }
-}
 
+    public Instant getTransactionTime() {
+        return transactionTime;
+    }
+
+    public void setTransactionTime(Instant transactionTime) {
+        this.transactionTime = transactionTime;
+    }
+}

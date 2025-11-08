@@ -62,4 +62,3 @@ public class AccountEventNotificationRequest {
         this.description = description;
     }
 }
-
